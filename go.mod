@@ -1,4 +1,4 @@
-module github.com/rramiachraf/goourl
+module github.com/rramiachraf/googurl
 
 go 1.16
 
