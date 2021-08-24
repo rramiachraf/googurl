@@ -1,4 +1,4 @@
-# goourl
+# googurl
 Fetch Google results as URLs.
 
 ## Usage
