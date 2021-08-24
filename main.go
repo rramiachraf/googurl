@@ -1,59 +1,51 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
-	"time"
 
-	"github.com/chromedp/chromedp"
-	"github.com/chromedp/chromedp/kb"
+	"github.com/go-rod/rod"
+	"github.com/go-rod/rod/lib/input"
 )
 
 func main() {
-	var query string
-	flag.StringVar(&query, "query", "", "Search query")
 	flag.Parse()
+	query := flag.Arg(0)
 
-	if query == "" {
-		fmt.Println("[ERR]", "Query value should be provided")
-		return
+	page := rod.New().MustConnect().MustPage("https://www.google.com")
+
+	searchBox, _ := page.Element("input[name='q']")
+	searchBox.Focus()
+	searchBox.Input(query)
+	searchBox.Press(input.Enter)
+	var urls []string
+
+	for {
+		page.WaitLoad()
+
+		selector := "#pnnext"
+		getURLs(page, &urls)
+
+		exists := page.MustHas(selector)
+
+		if exists {
+			url := page.MustElement(selector).MustAttribute("href")
+			page.Navigate("https://www.google.com" + *url)
+		} else {
+			break
+		}
 	}
 
-	ctx, cancel := chromedp.NewExecAllocator(context.Background(), chromedp.Flag("headless", false), chromedp.NoFirstRun)
-	defer cancel()
-	ctx, cancel = chromedp.NewContext(ctx)
-	defer cancel()
-
-	searchBox := "input[name='q']"
-	var attrs []map[string]string
-
-	var next string
-	var ok bool
-
-	tasks := chromedp.Tasks{
-		chromedp.WaitReady("body"),
-		chromedp.AttributesAll(".yuRUbf > a", &attrs, chromedp.ByQueryAll),
-		chromedp.AttributeValue("#pnnext", "href", &next, &ok, chromedp.AtLeast(0)),
+	for _, u := range urls {
+		fmt.Println(u)
 	}
+	fmt.Printf("\n[INFO] Found %d domains for (%s)\n", len(urls), query)
+}
 
-	chromedp.Run(ctx,
-		chromedp.Navigate("https://www.google.com"),
-		chromedp.Focus(searchBox),
-		chromedp.SendKeys(searchBox, query),
-		chromedp.SendKeys(searchBox, kb.Enter),
-		tasks,
-	)
-
-	for ok {
-		time.Sleep(time.Second * 1)
-		chromedp.Run(ctx,
-			chromedp.Navigate("https://www.google.com"+next),
-			tasks,
-		)
-	}
-
-	for _, attr := range attrs {
-		fmt.Println(attr["href"])
+func getURLs(page *rod.Page, urls *[]string) {
+	anchors, _ := page.Elements(".yuRUbf > a")
+	for _, anchor := range anchors {
+		href, _ := anchor.Attribute("href")
+		*urls = append(*urls, *href)
 	}
 }
