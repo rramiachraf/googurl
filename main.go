@@ -3,14 +3,25 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/input"
 )
 
 func main() {
+	var query string
+	var out string
+	flag.StringVar(&query, "query", "", "The search query to use")
+	flag.StringVar(&out, "out", "", "File to write the output")
 	flag.Parse()
-	query := flag.Arg(0)
+
+	printScriptName()
+
+	if query == "" {
+		fmt.Println("[ERR]", "The query parameter must be provided")
+		return
+	}
 
 	page := rod.New().MustConnect().MustPage("https://www.google.com")
 
@@ -36,16 +47,47 @@ func main() {
 		}
 	}
 
-	for _, u := range urls {
-		fmt.Println(u)
+	if out != "" {
+		saveOutput(out, urls)
 	}
+
 	fmt.Printf("\n[INFO] Found %d domains for (%s)\n", len(urls), query)
 }
 
+// Parse URLs from the page and print them to stdout
 func getURLs(page *rod.Page, urls *[]string) {
 	anchors, _ := page.Elements(".yuRUbf > a")
 	for _, anchor := range anchors {
 		href, _ := anchor.Attribute("href")
+		fmt.Println(*href)
 		*urls = append(*urls, *href)
 	}
+}
+
+// Write the extracted URLs to the specified file
+func saveOutput(out string, urls []string) {
+	f, err := os.Create(out)
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	defer f.Close()
+
+	for _, url := range urls {
+		f.WriteString(url + "\n")
+	}
+}
+
+// Print the script name as big text
+func printScriptName() {
+	fmt.Println(`
+░██████╗░░█████╗░░█████╗░░██████╗░██╗░░░██╗██████╗░██╗░░░░░
+██╔════╝░██╔══██╗██╔══██╗██╔════╝░██║░░░██║██╔══██╗██║░░░░░
+██║░░██╗░██║░░██║██║░░██║██║░░██╗░██║░░░██║██████╔╝██║░░░░░
+██║░░╚██╗██║░░██║██║░░██║██║░░╚██╗██║░░░██║██╔══██╗██║░░░░░
+╚██████╔╝╚█████╔╝╚█████╔╝╚██████╔╝╚██████╔╝██║░░██║███████╗
+░╚═════╝░░╚════╝░░╚════╝░░╚═════╝░░╚═════╝░╚═╝░░╚═╝╚══════╝          											 
+	`)
 }

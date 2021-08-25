@@ -3,8 +3,8 @@ Fetch Google results as URLs.
 
 ## Usage
 ```
-go mod tidy
-```
-```
-go run main.go "Your query"
+-out string
+    File to write the output
+-query string
+    The search query to use
 ```
