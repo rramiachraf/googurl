@@ -1,6 +1,11 @@
 # googurl
 Fetch Google results as URLs.
 
+## Installation
+```
+go get github.com/rramiachraf/googurl
+```
+
 ## Usage
 ```
 -out string
