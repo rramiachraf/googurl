@@ -13,3 +13,4 @@ go get github.com/rramiachraf/googurl
 -query string
     The search query to use
 ```
+![Terminal screenshot](https://i.imgur.com/uTvTCmg.gif)
